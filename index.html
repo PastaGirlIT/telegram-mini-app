@@ -1,16 +1,108 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Staff App</title>
+
+  <!-- Telegram API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .button {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      margin: 12px 0;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .cook { background: #ffb703; }
+    .cashier { background: #219ebc; color: white; }
+    .reset { background: #ccc; }
+
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
+
 <body>
-  <h2>Приложение сотрудников</h2>
-  <p>Если ты это видишь — Mini App работает.</p>
+
+  <!-- Экран выбора роли -->
+  <div id="role-screen">
+    <h2>Кто ты сегодня?</h2>
+    <button class="button cook" onclick="selectRole('cook')">👨‍🍳 Повар</button>
+    <button class="button cashier" onclick="selectRole('cashier')">💳 Кассир</button>
+  </div>
+
+  <!-- Экран ПОВАРА -->
+  <div id="cook-screen" class="hidden">
+    <h2>Отчёт повара</h2>
+    <button class="button">🍝 Приготовлено п/ф</button>
+    <button class="button">🗑 Списание</button>
+    <button class="button">📦 Разбор</button>
+    <button class="button reset" onclick="resetRole()">🔄 Сменить роль</button>
+  </div>
+
+  <!-- Экран КАССИРА -->
+  <div id="cashier-screen" class="hidden">
+    <h2>Отчёт кассира</h2>
+    <button class="button">➕ Внесения</button>
+    <button class="button">➖ Изъятия</button>
+    <button class="button">🗑 Списания</button>
+    <button class="button reset" onclick="resetRole()">🔄 Сменить роль</button>
+  </div>
 
   <script>
     Telegram.WebApp.ready();
+
+    const roleScreen = document.getElementById('role-screen');
+    const cookScreen = document.getElementById('cook-screen');
+    const cashierScreen = document.getElementById('cashier-screen');
+
+    const savedRole = localStorage.getItem('role');
+
+    if (savedRole === 'cook') showCook();
+    else if (savedRole === 'cashier') showCashier();
+
+    function selectRole(role) {
+      localStorage.setItem('role', role);
+      role === 'cook' ? showCook() : showCashier();
+    }
+
+    function resetRole() {
+      localStorage.removeItem('role');
+      cookScreen.classList.add('hidden');
+      cashierScreen.classList.add('hidden');
+      roleScreen.classList.remove('hidden');
+    }
+
+    function showCook() {
+      roleScreen.classList.add('hidden');
+      cashierScreen.classList.add('hidden');
+      cookScreen.classList.remove('hidden');
+    }
+
+    function showCashier() {
+      roleScreen.classList.add('hidden');
+      cookScreen.classList.add('hidden');
+      cashierScreen.classList.remove('hidden');
+    }
   </script>
+
 </body>
 </html>
