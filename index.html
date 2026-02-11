@@ -38,4 +38,120 @@
       padding: 10px;
       margin: 8px 0;
       border-radius: 8px;
-      border: 1px
+      border: 1px solid #ccc;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Выбор роли -->
+  <div id="role-screen">
+    <h2>Кто ты сегодня?</h2>
+    <button class="button cook" onclick="selectRole('cook')">👨‍🍳 Повар</button>
+    <button class="button cashier" onclick="selectRole('cashier')">💳 Кассир</button>
+  </div>
+
+  <!-- Меню повара -->
+  <div id="cook-screen" class="hidden">
+    <h2>Отчёт повара</h2>
+    <button class="button" onclick="openCookWriteoff()">🗑 Списание</button>
+    <button class="button reset" onclick="resetRole()">🔄 Сменить роль</button>
+  </div>
+
+  <!-- Форма списания -->
+  <div id="cook-writeoff-screen" class="hidden">
+    <h2>Списание</h2>
+
+    <input type="text" id="item" placeholder="Название позиции" />
+
+    <input type="number" id="quantity" placeholder="Количество" />
+
+    <select id="unit">
+      <option value="">Выбери единицу измерения</option>
+      <option value="кг">кг</option>
+      <option value="г">г</option>
+      <option value="шт">шт</option>
+      <option value="л">л</option>
+    </select>
+
+    <textarea id="reason" placeholder="Причина"></textarea>
+
+    <button class="button cook" onclick="submitCookWriteoff()">Отправить</button>
+    <button class="button reset" onclick="backToCook()">Назад</button>
+  </div>
+
+  <script>
+    Telegram.WebApp.ready();
+
+    const roleScreen = document.getElementById('role-screen');
+    const cookScreen = document.getElementById('cook-screen');
+    const cookWriteoffScreen = document.getElementById('cook-writeoff-screen');
+
+    const savedRole = localStorage.getItem('role');
+
+    if (savedRole === 'cook') {
+      showCook();
+    }
+
+    function selectRole(role) {
+      localStorage.setItem('role', role);
+      showCook();
+    }
+
+    function resetRole() {
+      localStorage.removeItem('role');
+      cookScreen.classList.add('hidden');
+      cookWriteoffScreen.classList.add('hidden');
+      roleScreen.classList.remove('hidden');
+    }
+
+    function showCook() {
+      roleScreen.classList.add('hidden');
+      cookWriteoffScreen.classList.add('hidden');
+      cookScreen.classList.remove('hidden');
+    }
+
+    function openCookWriteoff() {
+      cookScreen.classList.add('hidden');
+      cookWriteoffScreen.classList.remove('hidden');
+    }
+
+    function backToCook() {
+      cookWriteoffScreen.classList.add('hidden');
+      cookScreen.classList.remove('hidden');
+    }
+
+    function submitCookWriteoff() {
+      const item = document.getElementById('item').value.trim();
+      const quantity = document.getElementById('quantity').value.trim();
+      const unit = document.getElementById('unit').value;
+      const reason = document.getElementById('reason').value.trim();
+
+      if (!item || !quantity || !unit) {
+        alert("Заполни название, количество и единицу измерения");
+        return;
+      }
+
+      alert(
+        "Списание отправлено:\n\n" +
+        "Позиция: " + item + "\n" +
+        "Количество: " + quantity + " " + unit + "\n" +
+        "Причина: " + reason
+      );
+
+      document.getElementById('item').value = "";
+      document.getElementById('quantity').value = "";
+      document.getElementById('unit').value = "";
+      document.getElementById('reason').value = "";
+
+      backToCook();
+    }
+  </script>
+
+</body>
+</html>
