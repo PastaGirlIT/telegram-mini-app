@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Staff App</title>
-
-  <!-- Telegram API -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js?v=3"></script>
 
   <style>
     body {
@@ -22,11 +20,11 @@
     .button {
       display: block;
       width: 100%;
-      padding: 16px;
-      margin: 12px 0;
-      font-size: 18px;
+      padding: 14px;
+      margin: 10px 0;
+      font-size: 16px;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
     }
 
@@ -34,37 +32,45 @@
     .cashier { background: #219ebc; color: white; }
     .reset { background: #ccc; }
 
-    .hidden {
-      display: none;
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
     }
+
+    .hidden { display: none; }
   </style>
 </head>
 
 <body>
 
-  <!-- Экран выбора роли -->
+  <!-- Выбор роли -->
   <div id="role-screen">
     <h2>Кто ты сегодня?</h2>
     <button class="button cook" onclick="selectRole('cook')">👨‍🍳 Повар</button>
     <button class="button cashier" onclick="selectRole('cashier')">💳 Кассир</button>
   </div>
 
-  <!-- Экран ПОВАРА -->
+  <!-- Меню повара -->
   <div id="cook-screen" class="hidden">
     <h2>Отчёт повара</h2>
-    <button class="button">🍝 Приготовлено п/ф</button>
-    <button class="button">🗑 Списание</button>
-    <button class="button">📦 Разбор</button>
+    <button class="button" onclick="openCookWriteoff()">🗑 Списание</button>
     <button class="button reset" onclick="resetRole()">🔄 Сменить роль</button>
   </div>
 
-  <!-- Экран КАССИРА -->
-  <div id="cashier-screen" class="hidden">
-    <h2>Отчёт кассира</h2>
-    <button class="button">➕ Внесения</button>
-    <button class="button">➖ Изъятия</button>
-    <button class="button">🗑 Списания</button>
-    <button class="button reset" onclick="resetRole()">🔄 Сменить роль</button>
+  <!-- Форма списания повара -->
+  <div id="cook-writeoff-screen" class="hidden">
+    <h2>Списание</h2>
+
+    <input type="text" id="item" placeholder="Название позиции" />
+    <input type="number" id="quantity" placeholder="Количество" />
+    <textarea id="reason" placeholder="Причина"></textarea>
+
+    <button class="button cook" onclick="submitCookWriteoff()">Отправить</button>
+    <button class="button reset" onclick="backToCook()">Назад</button>
   </div>
 
   <script>
@@ -72,35 +78,60 @@
 
     const roleScreen = document.getElementById('role-screen');
     const cookScreen = document.getElementById('cook-screen');
-    const cashierScreen = document.getElementById('cashier-screen');
+    const cookWriteoffScreen = document.getElementById('cook-writeoff-screen');
 
     const savedRole = localStorage.getItem('role');
-
     if (savedRole === 'cook') showCook();
-    else if (savedRole === 'cashier') showCashier();
 
     function selectRole(role) {
       localStorage.setItem('role', role);
-      role === 'cook' ? showCook() : showCashier();
+      showCook();
     }
 
     function resetRole() {
       localStorage.removeItem('role');
       cookScreen.classList.add('hidden');
-      cashierScreen.classList.add('hidden');
       roleScreen.classList.remove('hidden');
     }
 
     function showCook() {
       roleScreen.classList.add('hidden');
-      cashierScreen.classList.add('hidden');
       cookScreen.classList.remove('hidden');
     }
 
-    function showCashier() {
-      roleScreen.classList.add('hidden');
+    function openCookWriteoff() {
       cookScreen.classList.add('hidden');
-      cashierScreen.classList.remove('hidden');
+      cookWriteoffScreen.classList.remove('hidden');
+    }
+
+    function backToCook() {
+      cookWriteoffScreen.classList.add('hidden');
+      cookScreen.classList.remove('hidden');
+    }
+
+    function submitCookWriteoff() {
+      const item = document.getElementById('item').value;
+      const quantity = document.getElementById('quantity').value;
+      const reason = document.getElementById('reason').value;
+
+      if (!item || !quantity) {
+        alert("Заполни название и количество");
+        return;
+      }
+
+      alert(
+        "Списание отправлено:\n\n" +
+        "Позиция: " + item + "\n" +
+        "Количество: " + quantity + "\n" +
+        "Причина: " + reason
+      );
+
+      // очистка формы
+      document.getElementById('item').value = "";
+      document.getElementById('quantity').value = "";
+      document.getElementById('reason').value = "";
+
+      backToCook();
     }
   </script>
 
