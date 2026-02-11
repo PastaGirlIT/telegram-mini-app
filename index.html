@@ -1,164 +1,176 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Staff App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js?v=4"></script>
-
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f2f2f2;
-      padding: 20px;
-      margin: 0;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .button {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      margin: 10px 0;
-      font-size: 16px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    .cook { background: #ffb703; }
-    .cashier { background: #219ebc; color: white; }
-    .secondary { background: #8ecae6; }
-    .danger { background: #fb8500; }
-    .reset { background: #ccc; }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-
-    .hidden { display: none; }
-  </style>
+<meta charset="UTF-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body{font-family:Arial;padding:20px;background:#f5f5f5}
+button{padding:12px;margin:5px 0;width:100%;border:none;border-radius:8px}
+.primary{background:#2AABEE;color:white}
+.secondary{background:#ddd}
+.hidden{display:none}
+input{width:100%;padding:10px;margin:5px 0}
+</style>
 </head>
-
 <body>
 
-<!-- Выбор роли -->
-<div id="role-screen">
-  <h2>Кто ты сегодня?</h2>
-  <button class="button cook" onclick="selectRole('cook')">👨‍🍳 Повар</button>
-  <button class="button cashier" onclick="selectRole('cashier')">💳 Кассир</button>
+<h2>Mini App</h2>
+
+<div id="roleScreen">
+<button class="primary" onclick="setRole('повар')">Повар</button>
+<button class="primary" onclick="setRole('кассир')">Кассир</button>
 </div>
 
-<!-- Меню повара -->
-<div id="cook-screen" class="hidden">
-  <h2>Меню повара</h2>
-
-  <button class="button cook" onclick="openCookWriteoff()">🗑 Списание</button>
-  <button class="button secondary" onclick="showAlert('Раздел заготовок в разработке')">📦 Заготовки</button>
-  <button class="button danger" onclick="showAlert('Раздел заказов в разработке')">🛒 Нужно заказать</button>
-
-  <button class="button reset" onclick="resetRole()">🔄 Сменить роль</button>
+<div id="cookMenu" class="hidden">
+<button onclick="cookPrep()">Приготовление</button>
+<button onclick="cookWriteoff()">Списание</button>
+<button onclick="cookBreakdown()">Разбор</button>
 </div>
 
-<!-- Форма списания -->
-<div id="cook-writeoff-screen" class="hidden">
-  <h2>Списание</h2>
+<div id="cashierMenu" class="hidden">
+<button onclick="cashIn()">Внесение</button>
+<button onclick="cashOut()">Изъятие</button>
+<button onclick="cashWriteoff()">Списание</button>
+</div>
 
-  <input type="text" id="item" placeholder="Название позиции" />
-  <input type="number" id="quantity" placeholder="Количество" />
-
-  <select id="unit">
-    <option value="">Выбери единицу измерения</option>
-    <option value="кг">кг</option>
-    <option value="г">г</option>
-    <option value="шт">шт</option>
-    <option value="л">л</option>
-  </select>
-
-  <textarea id="reason" placeholder="Причина"></textarea>
-
-  <button class="button cook" onclick="submitCookWriteoff()">Отправить</button>
-  <button class="button reset" onclick="backToCook()">Назад</button>
+<div id="workScreen" class="hidden">
+<h3 id="title"></h3>
+<div id="dynamic"></div>
+<input id="quantity" placeholder="Количество">
+<div id="units"></div>
+<input id="reason" placeholder="Причина (если нужно)">
+<button class="primary" onclick="send()">Отправить</button>
+<button onclick="back()">Назад</button>
 </div>
 
 <script>
-Telegram.WebApp.ready();
+const URL="ВСТАВЬ_URL";
 
-const roleScreen = document.getElementById('role-screen');
-const cookScreen = document.getElementById('cook-screen');
-const cookWriteoffScreen = document.getElementById('cook-writeoff-screen');
+let role, operation, selectedName="", selectedUnit="";
 
-const savedRole = localStorage.getItem('role');
-
-if (savedRole === 'cook') {
-  showCook();
+function setRole(r){
+role=r;
+document.getElementById("roleScreen").classList.add("hidden");
+if(r==="повар") document.getElementById("cookMenu").classList.remove("hidden");
+if(r==="кассир") document.getElementById("cashierMenu").classList.remove("hidden");
 }
 
-function selectRole(role) {
-  localStorage.setItem('role', role);
-  showCook();
+function showWork(title){
+document.getElementById("title").innerText=title;
+document.getElementById("cookMenu").classList.add("hidden");
+document.getElementById("cashierMenu").classList.add("hidden");
+document.getElementById("workScreen").classList.remove("hidden");
 }
 
-function resetRole() {
-  localStorage.removeItem('role');
-  cookScreen.classList.add('hidden');
-  cookWriteoffScreen.classList.add('hidden');
-  roleScreen.classList.remove('hidden');
+async function cookPrep(){
+operation="приготовление";
+showWork("Приготовление");
+loadButtons("prep");
 }
 
-function showCook() {
-  roleScreen.classList.add('hidden');
-  cookWriteoffScreen.classList.add('hidden');
-  cookScreen.classList.remove('hidden');
+async function cookWriteoff(){
+operation="списание";
+showWork("Списание");
+loadUnits();
 }
 
-function openCookWriteoff() {
-  cookScreen.classList.add('hidden');
-  cookWriteoffScreen.classList.remove('hidden');
+async function cookBreakdown(){
+operation="разбор";
+showWork("Разбор");
+loadButtons("breakdown");
 }
 
-function backToCook() {
-  cookWriteoffScreen.classList.add('hidden');
-  cookScreen.classList.remove('hidden');
+async function cashIn(){
+operation="внесение";
+showWork("Внесение");
 }
 
-function showAlert(text) {
-  alert(text);
+async function cashOut(){
+operation="изъятие";
+showWork("Изъятие");
 }
 
-function submitCookWriteoff() {
-  const item = document.getElementById('item').value.trim();
-  const quantity = document.getElementById('quantity').value.trim();
-  const unit = document.getElementById('unit').value;
-  const reason = document.getElementById('reason').value.trim();
+async function cashWriteoff(){
+operation="списание";
+showWork("Списание");
+loadUnits();
+}
 
-  if (!item || !quantity || !unit) {
-    alert("Заполни название, количество и единицу измерения");
-    return;
-  }
+async function loadButtons(type){
+const res=await fetch(URL+"?type="+type);
+const data=await res.json();
+const div=document.getElementById("dynamic");
+div.innerHTML="";
+data.forEach(i=>{
+let b=document.createElement("button");
+b.className="secondary";
+b.innerText=i.name+" ("+i.unit+")";
+b.onclick=()=>{
+selectedName=i.name;
+selectedUnit=i.unit;
+if(operation==="разбор") loadBreakdownMap(i.name);
+};
+div.appendChild(b);
+});
+}
 
-  alert(
-    "Списание отправлено:\n\n" +
-    "Позиция: " + item + "\n" +
-    "Количество: " + quantity + " " + unit + "\n" +
-    "Причина: " + reason
-  );
+async function loadBreakdownMap(name){
+const res=await fetch(URL+"?type=breakdown_map&from="+name);
+const data=await res.json();
+const div=document.getElementById("dynamic");
+div.innerHTML="";
+data.forEach(i=>{
+let b=document.createElement("button");
+b.innerText=i.name+" ("+i.unit+")";
+b.onclick=()=>{
+selectedName=name+" → "+i.name;
+selectedUnit=i.unit;
+};
+div.appendChild(b);
+});
+}
 
-  document.getElementById('item').value = "";
-  document.getElementById('quantity').value = "";
-  document.getElementById('unit').value = "";
-  document.getElementById('reason').value = "";
+async function loadUnits(){
+const res=await fetch(URL+"?type=units");
+const data=await res.json();
+const div=document.getElementById("units");
+div.innerHTML="";
+data.forEach(u=>{
+let b=document.createElement("button");
+b.innerText=u.unit;
+b.onclick=()=>selectedUnit=u.unit;
+div.appendChild(b);
+});
+}
 
-  backToCook();
+async function send(){
+let qty=document.getElementById("quantity").value;
+let reason=document.getElementById("reason").value;
+
+if(role==="кассир"){
+let amount=qty;
+await fetch(URL,{method:"POST",body:JSON.stringify({role,operation,amount,reason})});
+alert("Сохранено");
+return;
+}
+
+await fetch(URL,{
+method:"POST",
+body:JSON.stringify({
+role,
+operation,
+name:selectedName,
+quantity:qty,
+unit:selectedUnit,
+reason
+})
+});
+
+alert("Сохранено");
+}
+
+function back(){
+location.reload();
 }
 </script>
 
