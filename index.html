@@ -1,9 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Team App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js?v=777"></script>
+
+  <8519941082:AAFxS8VlnQ5YaoIDQjDa4l5u8VVfffgjtCM>
+  <script src="https://telegram.org/js/telegram-web-app.js?v=1001"></script>
+
   <style>
     body{font-family:-apple-system,BlinkMacSystemFont,Arial;background:#f5f5f5;margin:0;padding:16px}
     .card{background:#fff;border-radius:12px;padding:12px;margin:12px 0}
@@ -13,326 +18,156 @@
     .secondary{background:#e6e6e6}
     .warn{background:#fb8500;color:#fff}
     .hidden{display:none}
-    input,textarea{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ccc;box-sizing:border-box}
-    .miniBtn{display:inline-block;width:auto;margin:6px 6px 0 0;padding:8px 10px}
     .status{white-space:pre-wrap;font-size:13px;opacity:.9}
-    .row{display:flex;gap:8px}
-    .row input{flex:1}
+    input,textarea{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ccc;box-sizing:border-box}
   </style>
 </head>
+
 <body>
+  <h2>Отчёты</h2>
 
-<h2>Отчёты</h2>
+  <div id="status" class="card status">Статус: загрузка…</div>
 
-<div id="status" class="card status">Статус: готово</div>
-
-<div id="roleScreen" class="card">
-  <h3>Кто ты сегодня?</h3>
-  <button class="btn primary" onclick="setRole('повар')">👨‍🍳 Повар</button>
-  <button class="btn primary" onclick="setRole('кассир')">💳 Кассир</button>
-</div>
-
-<div id="cookMenu" class="card hidden">
-  <h3>Меню повара</h3>
-  <button class="btn secondary" onclick="openCookPrep()">🍝 Приготовление</button>
-  <button class="btn secondary" onclick="openCookWriteoff()">🗑 Списание</button>
-  <button class="btn secondary" onclick="openCookBreakdown()">📦 Разбор</button>
-  <button class="btn warn" onclick="resetRole()">🔄 Сменить роль</button>
-</div>
-
-<div id="cashierMenu" class="card hidden">
-  <h3>Меню кассира</h3>
-  <button class="btn secondary" onclick="openCash('внесение')">➕ Внесение</button>
-  <button class="btn secondary" onclick="openCash('изъятие')">➖ Изъятие</button>
-  <button class="btn secondary" onclick="openCashWriteoff()">🗑 Списание</button>
-  <button class="btn warn" onclick="resetRole()">🔄 Сменить роль</button>
-</div>
-
-<div id="workScreen" class="card hidden">
-  <h3 id="workTitle">...</h3>
-
-  <div id="dynamic"></div>
-
-  <div id="qtyBlock" class="hidden">
-    <input id="qty" type="number" inputmode="decimal" placeholder="Количество">
-    <div id="unitBar" class="status"></div>
-    <textarea id="reason" placeholder="Причина / комментарий"></textarea>
-
-    <button class="btn primary" onclick="sendCook()">Отправить</button>
-    <button class="btn secondary" onclick="backToMenu()">Назад</button>
+  <div id="roleScreen" class="card">
+    <h3>Кто ты сегодня?</h3>
+    <button id="btnCook" class="btn primary">👨‍🍳 Повар</button>
+    <button id="btnCashier" class="btn primary">💳 Кассир</button>
   </div>
 
-  <div id="cashBlock" class="hidden">
-    <div class="row">
-      <input id="rub" type="number" inputmode="numeric" placeholder="Рубли">
-      <input id="kop" type="number" inputmode="numeric" placeholder="Копейки">
-    </div>
-    <textarea id="cashReason" placeholder="Причина"></textarea>
-
-    <button class="btn primary" onclick="sendCash()">Отправить</button>
-    <button class="btn secondary" onclick="backToMenu()">Назад</button>
+  <div id="cookMenu" class="card hidden">
+    <h3>Меню повара</h3>
+    <button id="btnPrep" class="btn secondary">🍝 Приготовление</button>
+    <button id="btnWriteoffCook" class="btn secondary">🗑 Списание</button>
+    <button id="btnBreakdown" class="btn secondary">📦 Разбор</button>
+    <button id="btnReset1" class="btn warn">🔄 Сменить роль</button>
   </div>
-</div>
 
-<script>
-Telegram.WebApp.ready();
+  <div id="cashierMenu" class="card hidden">
+    <h3>Меню кассира</h3>
+    <button id="btnCashIn" class="btn secondary">➕ Внесение</button>
+    <button id="btnCashOut" class="btn secondary">➖ Изъятие</button>
+    <button id="btnWriteoffCash" class="btn secondary">🗑 Списание</button>
+    <button id="btnReset2" class="btn warn">🔄 Сменить роль</button>
+  </div>
 
-/https://script.google.com/macros/s/AKfycbzJg3OfKzXXojWydq3d6_mTAn5r6_pv-R_U2_peOwme_wVUc7ZX5hqUKvpH4FhgJQTj/exec/
-const API_BASE = "ВСТАВЬ_СЮДА_TВОЙ_googleusercontent_echo_URL";
+  <div id="workScreen" class="card hidden">
+    <h3 id="workTitle">...</h3>
+    <div id="workBody" class="status"></div>
+    <button id="btnBack" class="btn secondary">Назад</button>
+  </div>
 
-const S = (t)=>document.getElementById(t);
-const log = (m)=>S("status").textContent = "Статус: " + m;
+  <script>
+    // ----- Диагностика ошибок прямо на экране -----
+    const statusEl = document.getElementById("status");
+    const log = (m) => { statusEl.textContent = "Статус: " + m; };
 
-let role = localStorage.getItem("role") || "";
-let operation = "";
-let selectedName = "";
-let selectedUnit = "";
-let breakdownFrom = "";
-
-boot();
-
-function boot(){
-  if(role==="повар"){ S("roleScreen").classList.add("hidden"); S("cookMenu").classList.remove("hidden"); log("роль: повар"); }
-  else if(role==="кассир"){ S("roleScreen").classList.add("hidden"); S("cashierMenu").classList.remove("hidden"); log("роль: кассир"); }
-  else log("выбери роль");
-}
-
-function setRole(r){
-  role=r;
-  localStorage.setItem("role", r);
-  S("roleScreen").classList.add("hidden");
-  if(r==="повар") S("cookMenu").classList.remove("hidden");
-  if(r==="кассир") S("cashierMenu").classList.remove("hidden");
-  log("роль сохранена: "+r);
-}
-
-function resetRole(){
-  localStorage.removeItem("role");
-  role="";
-  S("cookMenu").classList.add("hidden");
-  S("cashierMenu").classList.add("hidden");
-  S("workScreen").classList.add("hidden");
-  S("roleScreen").classList.remove("hidden");
-  log("роль сброшена");
-}
-
-function showWork(title){
-  S("cookMenu").classList.add("hidden");
-  S("cashierMenu").classList.add("hidden");
-  S("workScreen").classList.remove("hidden");
-  S("workTitle").textContent = title;
-  S("dynamic").innerHTML = "";
-  S("qtyBlock").classList.add("hidden");
-  S("cashBlock").classList.add("hidden");
-  selectedName=""; selectedUnit=""; breakdownFrom="";
-}
-
-function backToMenu(){
-  S("workScreen").classList.add("hidden");
-  if(role==="повар") S("cookMenu").classList.remove("hidden");
-  if(role==="кассир") S("cashierMenu").classList.remove("hidden");
-  log("готово");
-}
-
-// ---------- API helpers ----------
-async function apiGet(type, params={}){
-  const url = new URL(API_BASE);
-  url.searchParams.set("type", type);
-  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
-  log("GET " + type + "…");
-  const r = await fetch(url.toString(), { method:"GET" });
-  const t = await r.text();
-  try { return JSON.parse(t); } catch { return { ok:false, error:"Non-JSON", raw:t.slice(0,300) }; }
-}
-
-async function apiPost(payload){
-  log("POST…");
-  const r = await fetch(API_BASE, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json;charset=utf-8" },
-    body: JSON.stringify(payload),
-  });
-  const t = await r.text();
-  try { return JSON.parse(t); } catch { return { ok:true, raw:t }; }
-}
-
-// ---------- COOK ----------
-async function openCookPrep(){
-  operation="приготовление";
-  showWork("Приготовление: выбери позицию");
-  const data = await apiGet("prep");
-  renderPickButtons(data, (item)=>{
-    selectedName=item.name;
-    selectedUnit=item.unit;
-    S("qtyBlock").classList.remove("hidden");
-    S("unitBar").textContent = "Ед. изм.: " + selectedUnit;
-    S("reason").placeholder = "Комментарий (необязательно)";
-    log("выбрано: " + selectedName);
-  });
-}
-
-async function openCookWriteoff(){
-  operation="списание";
-  showWork("Списание: введи позицию");
-  S("dynamic").innerHTML = `<input id="freeName" placeholder="Название позиции">`;
-  S("qtyBlock").classList.remove("hidden");
-  S("reason").placeholder = "Причина списания";
-  await renderUnitsBar();
-  log("списание: заполни поля");
-}
-
-async function openCookBreakdown(){
-  operation="разбор";
-  showWork("Разбор: выбери что разбираем");
-  const data = await apiGet("breakdown");
-  renderPickButtons(data, async (item)=>{
-    breakdownFrom = item.name;
-    log("разбор: выбрано что разбираем: "+breakdownFrom);
-    await openBreakdownTo(breakdownFrom);
-  });
-}
-
-async function openBreakdownTo(fromName){
-  S("workTitle").textContent = `Разбор: ${fromName} → выбери на что`;
-  S("dynamic").innerHTML = "";
-  S("qtyBlock").classList.add("hidden");
-  const data = await apiGet("breakdown_map", { from: fromName });
-  renderPickButtons(data, (item)=>{
-    selectedName = `${fromName} → ${item.name}`;
-    selectedUnit = item.unit;
-    S("qtyBlock").classList.remove("hidden");
-    S("unitBar").textContent = "Ед. изм.: " + selectedUnit;
-    S("reason").placeholder = "Комментарий (необязательно)";
-    log("выбрано: " + selectedName);
-  });
-}
-
-function renderPickButtons(data, onPick){
-  if(!Array.isArray(data)){
-    log("ошибка API: "+JSON.stringify(data));
-    S("dynamic").innerHTML = `<div class="status">Ошибка API: ${JSON.stringify(data)}</div>`;
-    return;
-  }
-  if(data.length===0){
-    log("список пуст");
-    S("dynamic").innerHTML = `<div class="status">Список пуст. Проверь таблицу и active=1.</div>`;
-    return;
-  }
-  data.forEach(item=>{
-    const b=document.createElement("button");
-    b.className="btn secondary";
-    b.textContent = `${item.name} (${item.unit})`;
-    b.onclick=()=>onPick(item);
-    S("dynamic").appendChild(b);
-  });
-}
-
-async function renderUnitsBar(){
-  const units = await apiGet("units");
-  if(!Array.isArray(units)){
-    S("unitBar").textContent = "Ошибка units: " + JSON.stringify(units);
-    return;
-  }
-  const bar = document.createElement("div");
-  bar.className = "status";
-  bar.textContent = "Выбери единицу: ";
-  units.forEach(u=>{
-    const b=document.createElement("button");
-    b.className="btn secondary miniBtn";
-    b.textContent=u.unit;
-    b.onclick=()=>{ selectedUnit=u.unit; log("ед.изм.: "+selectedUnit); };
-    bar.appendChild(b);
-  });
-  S("unitBar").innerHTML="";
-  S("unitBar").appendChild(bar);
-}
-
-async function sendCook(){
-  try {
-    const qty = S("qty").value;
-    const reason = S("reason").value || "";
-
-    if(operation==="списание"){
-      const free = (document.getElementById("freeName")?.value || "").trim();
-      if(!free) return alert("Введи название позиции");
-      selectedName = free;
-      if(!selectedUnit) return alert("Выбери единицу измерения");
-      if(!qty) return alert("Введи количество");
-    } else {
-      if(!selectedName) return alert("Выбери позицию");
-      if(!qty) return alert("Введи количество");
-      if(!selectedUnit) return alert("Нет единицы измерения");
-    }
-
-    const res = await apiPost({
-      role:"повар",
-      operation,
-      name:selectedName,
-      quantity:qty,
-      unit:selectedUnit,
-      reason
+    window.addEventListener("error", (e) => {
+      log("JS error: " + (e.message || e.error || "unknown"));
     });
 
-    if(res && res.ok===false){
-      log("ошибка записи: "+JSON.stringify(res));
-      return alert("Не записалось. Смотри статус сверху.");
-    }
-
-    alert("Сохранено ✅");
-    S("qty").value=""; S("reason").value="";
-    backToMenu();
-  } catch(e){
-    log("sendCook error: "+String(e));
-    alert("Ошибка. Смотри статус сверху.");
-  }
-}
-
-// ---------- CASHIER ----------
-function openCash(op){
-  operation = op;
-  showWork(op==="внесение" ? "Внесение" : "Изъятие");
-  S("cashBlock").classList.remove("hidden");
-  S("rub").value=""; S("kop").value=""; S("cashReason").value="";
-  log("кассир: "+operation);
-}
-
-async function openCashWriteoff(){
-  operation="списание";
-  showWork("Списание кассира: введи позицию");
-  S("dynamic").innerHTML = `<input id="freeNameCash" placeholder="Название позиции">`;
-  S("qtyBlock").classList.remove("hidden");
-  S("reason").placeholder = "Причина списания";
-  await renderUnitsBar();
-  log("кассир списание: заполни поля");
-}
-
-async function sendCash(){
-  try {
-    const rub = S("rub").value || "0";
-    const kop = S("kop").value || "0";
-    const reason = (S("cashReason").value || "").trim();
-    if(!reason) return alert("Укажи причину");
-
-    const res = await apiPost({
-      role:"кассир",
-      operation,
-      amount_rub: rub,
-      amount_kop: kop,
-      reason
+    window.addEventListener("unhandledrejection", (e) => {
+      log("Promise error: " + (e.reason ? String(e.reason) : "unknown"));
     });
 
-    if(res && res.ok===false){
-      log("ошибка записи: "+JSON.stringify(res));
-      return alert("Не записалось. Смотри статус сверху.");
+    // ----- UI helpers -----
+    const show = (id) => document.getElementById(id).classList.remove("hidden");
+    const hide = (id) => document.getElementById(id).classList.add("hidden");
+    const setTitle = (t) => document.getElementById("workTitle").textContent = t;
+    const setBody  = (t) => document.getElementById("workBody").textContent = t;
+
+    let role = localStorage.getItem("role") || "";
+
+    function goRole() {
+      hide("cookMenu"); hide("cashierMenu"); hide("workScreen");
+      show("roleScreen");
+      log("выбери роль");
     }
 
-    alert("Сохранено ✅");
-    backToMenu();
-  } catch(e){
-    log("sendCash error: "+String(e));
-    alert("Ошибка. Смотри статус сверху.");
-  }
-}
-</script>
+    function goCookMenu() {
+      hide("roleScreen"); hide("cashierMenu"); hide("workScreen");
+      show("cookMenu");
+      log("роль: повар");
+    }
+
+    function goCashierMenu() {
+      hide("roleScreen"); hide("cookMenu"); hide("workScreen");
+      show("cashierMenu");
+      log("роль: кассир");
+    }
+
+    function goWork(title, text) {
+      hide("roleScreen"); hide("cookMenu"); hide("cashierMenu");
+      show("workScreen");
+      setTitle(title);
+      setBody(text);
+      log("экран: " + title);
+    }
+
+    function setRole(r) {
+      role = r;
+      localStorage.setItem("role", r);
+      if (r === "повар") goCookMenu();
+      else goCashierMenu();
+    }
+
+    function resetRole() {
+      localStorage.removeItem("role");
+      role = "";
+      goRole();
+    }
+
+    // ----- Навешиваем события после загрузки DOM -----
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        // Telegram ready — не обязателен для кликов
+        if (window.Telegram && Telegram.WebApp) Telegram.WebApp.ready();
+
+        document.getElementById("btnCook").addEventListener("click", () => setRole("повар"));
+        document.getElementById("btnCashier").addEventListener("click", () => setRole("кассир"));
+
+        document.getElementById("btnPrep").addEventListener("click", () => {
+          goWork("Приготовление", "Дальше подключим кнопки из таблицы (prep_list) и отправку в reports.");
+        });
+
+        document.getElementById("btnWriteoffCook").addEventListener("click", () => {
+          goWork("Списание (повар)", "Дальше подключим ввод: название + кол-во + ед + причина → reports.");
+        });
+
+        document.getElementById("btnBreakdown").addEventListener("click", () => {
+          goWork("Разбор", "Дальше подключим: выбрать 'что' → выбрать 'на что' из breakdown_map → reports.");
+        });
+
+        document.getElementById("btnCashIn").addEventListener("click", () => {
+          goWork("Внесение", "Дальше подключим: руб/коп + причина → cashier_reports.");
+        });
+
+        document.getElementById("btnCashOut").addEventListener("click", () => {
+          goWork("Изъятие", "Дальше подключим: руб/коп + причина → cashier_reports.");
+        });
+
+        document.getElementById("btnWriteoffCash").addEventListener("click", () => {
+          goWork("Списание (кассир)", "Дальше подключим: название + кол-во + ед + причина → reports или отдельный лист.");
+        });
+
+        document.getElementById("btnReset1").addEventListener("click", resetRole);
+        document.getElementById("btnReset2").addEventListener("click", resetRole);
+
+        document.getElementById("btnBack").addEventListener("click", () => {
+          if (role === "повар") goCookMenu();
+          else if (role === "кассир") goCashierMenu();
+          else goRole();
+        });
+
+        // стартовый экран
+        if (role === "повар") goCookMenu();
+        else if (role === "кассир") goCashierMenu();
+        else goRole();
+
+        log("готово (кнопки должны кликаться)");
+      } catch (err) {
+        log("init error: " + String(err));
+      }
+    });
+  </script>
 </body>
 </html>
